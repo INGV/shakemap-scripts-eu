@@ -6,7 +6,7 @@
 #
 
 # Check software(s)
-for PROGRAM in mkdir git mail docker tr date ; do
+for PROGRAM in mkdir bc git mail docker tr date ; do
     command -v ${PROGRAM} >/dev/null 2>&1 || { echo >&2 " \"${PROGRAM}\" program doesn't exist.  Aborting."; exit 1; }
 done
 
@@ -16,11 +16,10 @@ DIRWORK=$( cd $(dirname $0) ; pwd)
 DIRTMP=${DIRWORK}/tmp
 DIRLOG=${DIRWORK}/log
 DIRLOCK=${DIRWORK}/lock
-DIRSHAKEMAP4=/Users/valentino/gitwork/gitlab/_shakemap/shakemap4
-DIRSHAKEMAP4_WEB=/Users/valentino/tmp/shakemap4-web
+DIRSHAKEMAP4=/home/shake/gitwork/_shakemap/shakemap4
+DIRSHAKEMAP4_WEB=/home/shake/gitwork/_INGV/shakemap4-web
 FILE_EVENTS_TO_ELABORATE=${DIRTMP}/$(basename $0)__FILE_EVENTS_TO_ELABORATE__$(date +%Y%m%dT%H%M%S)
-#DIRGITSHAKEMAP_FOR_PULL="/home/shake/gitwork/_shakemap/shakemap-input-it__to_pull" # !!! This must be the absolute path !!!
-DIRGITSHAKEMAP_FOR_PULL="/Users/valentino/gitwork/github/_INGV/shakemap-input-eu" # !!! This must be the absolute path !!!
+#DIRGITSHAKEMAP_FOR_PULL="/home/shake/gitwork/_INGV/shakemap-input-eu__to_pull" # !!! This must be the absolute path !!!
 SLACK_CHANNEL="#valentino_debug"
 SLACK_HOOK_URL="https://hooks.slack.com/services/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"
 #MAIL_TO="valentino.lauciani@ingv.it,alberto.michelini@ingv.it,dario.jozinovic@ingv.it,licia.faenza@ingv.it,ilaria.oliveti@ingv.it,emanuele.casarotti@ingv.it"
