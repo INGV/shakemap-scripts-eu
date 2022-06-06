@@ -140,7 +140,7 @@ if (( ${IN__REALTIME} == 1 )); then
 	    rm ${DIRTMP}/make_pull_from_gitlab.sh.log
     fi
     echo ""
-    ${DIRWORK}/make_pull_from_gitlab.sh -g ${DIRGITSHAKEMAP_FOR_PULL} -d ${DIRSHAKEMAP4_PROFILE_DATA} 2>&1 | tee -a ${DIRTMP}/make_pull_from_gitlab.sh.log
+#    ${DIRWORK}/make_pull_from_gitlab.sh -g ${DIRGITSHAKEMAP_FOR_PULL} -d ${DIRSHAKEMAP4_PROFILE_DATA} 2>&1 | tee -a ${DIRTMP}/make_pull_from_gitlab.sh.log
     echo_date "Done"
     echo ""
 
@@ -158,7 +158,7 @@ elif (( ${IN__REALTIME} == 0 )); then
 	    exit 0
     fi
 fi
-EVENTIDS="20220503_0000135 20220502_0000101 20201031_0000451" # To test
+EVENTIDS="20220404_0000034" # To test
 
 # Check EVENTIDS
 if [ -z "${EVENTIDS}" ]; then
@@ -223,7 +223,7 @@ for EVENTID in ${EVENTIDS}; do
         fi
 
         # Run docker
-        COMMAND='time docker run --rm --name shakemap4__${EVENTID} -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c"shake ${EVENTID} ${MODULE_SELECT} assemble -c \"SM4 run\" model contour shape info stations raster rupture gridxml history plotregr mapping" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}.txt '
+        COMMAND="time docker run --rm --name shakemap4__${EVENTID} -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c\"shake ${EVENTID} ${MODULE_SELECT} assemble -c \\\"SM4 run\\\" model contour shape info stations raster rupture gridxml history plotregr mapping\" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}.txt "
         echo "COMMAND=${COMMAND}"
         exit
         time docker run --rm --name shakemap4__${EVENTID} -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c"shake ${EVENTID} ${MODULE_SELECT} assemble -c \"SM4 run\" model contour shape info stations raster rupture gridxml history plotregr mapping" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}.txt 
