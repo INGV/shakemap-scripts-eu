@@ -243,9 +243,16 @@ for EVENTID in ${EVENTIDS}; do
         echo_date "Set ShakeMap conf. by Country code:"
 	SHAKEMAP_FILES_CONF="gmpe_sets.conf model.conf modules.conf products.conf select.conf"
 	DIRSHAKEMAP4_PROFILE_CONF="${DIRSHAKEMAP4_PROFILE}/install/config"
-	cd ${DIRSHAKEMAP4_PROFILE_CONF}
 
-	echo " git status:"
+	echo " git pull last conf(s) into \"${DIRSHAKEMAP_CONFIGURATIONS}\":"
+	cd ${DIRSHAKEMAP_CONFIGURATIONS}
+	git pull
+	cd -
+	echo " done"
+	echo ""
+
+	echo " git status into \"${DIRSHAKEMAP4_PROFILE_CONF}\":"
+	cd ${DIRSHAKEMAP4_PROFILE_CONF}
 	git status . | grep "modified"
 	echo " done"
 	echo ""
