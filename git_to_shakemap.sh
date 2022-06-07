@@ -294,6 +294,7 @@ for EVENTID in ${EVENTIDS}; do
             MAG: ${MAG} \
             \n\n \
             INPUT PARAMS FROM: \
+	    \n \
             - ${MAIL_GITHUB_EVENT_URL} \
             \n\n \
             INPUT CONF FROM: \
