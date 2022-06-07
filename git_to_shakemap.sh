@@ -152,13 +152,23 @@ if (( ${IN__REALTIME} == 1 )); then
     echo_date "Done"
     echo ""
 elif (( ${IN__REALTIME} == 0 )); then
+    echo "Check dir:"
     EVENTIDS=${IN__EVENTID}
     if [ -d ${DIRSHAKEMAP4_PROFILE_DATA}/${IN__EVENTID} ]; then
 	    echo " the dir \"${DIRSHAKEMAP4_PROFILE_DATA}/${IN__EVENTID}\" already exists."
     else
-	    echo " the dir \"${DIRSHAKEMAP4_PROFILE_DATA}/${IN__EVENTID}\" doesn't exist; please, copy from \"_shakemap/shakemap-input-it__to_pull\"."
-	    exit 0
+	    echo " the dir \"${DIRSHAKEMAP4_PROFILE_DATA}/${IN__EVENTID}\" doesn't exist; create..."
+	    mkdir -p ${DIRSHAKEMAP4_PROFILE_DATA}/${IN__EVENTID}
     fi
+    echo "Copy files:"
+    if [ -d ${DIRGITSHAKEMAP_FOR_PULL}/data/${IN__EVENTID:0:6}/${IN__EVENTID}/current ]; then
+        cp -v ${DIRGITSHAKEMAP_FOR_PULL}/data/${IN__EVENTID:0:6}/${IN__EVENTID}/current/* ${DIRSHAKEMAP4_PROFILE_DATA}/${IN__EVENTID}/current/
+    else
+        echo " the input directory \"${DIRGITSHAKEMAP_FOR_PULL}/data/${IN__EVENTID:0:6}/${IN__EVENTID}/\" doesn't exist"
+	exit 0
+    fi
+    echo "Done"
+    echo ""
 fi
 #EVENTIDS="20220503_0000135 20220404_0000034" # To test
 
@@ -197,14 +207,16 @@ for EVENTID in ${EVENTIDS}; do
         echo " NETWORK=${NETWORK}"
         echo ""
 
+        # Set Mail variables
         MAIL_GITHUB_EVENT_URL="https://github.com/INGV/shakemap-input-eu/blob/main/data/${EVENTID:0:6}/${EVENTID}/current"
+        MAIL_GITHUB_CONF_URL="https://github.com/INGV/shakemap-conf-eu/tree/main/config"
 
         # Get country code
         echo_date "Get Country code:"
         CURL_RETRY_COUNT=1
         CURL_RETRY_COUNT_MAX=5
         HTTP_RESPONSE=-99
-        URL="http://api.geonames.org/countryCode?lat=${LAT}&lng=${LON}&radius=0.01&username=spada"
+        URL="http://api.geonames.org/countryCode?lat=${LAT}&lng=${LON}&radius=100&username=spada"
         echo " URL=${URL}"
         while (( ${CURL_RETRY_COUNT} <= ${CURL_RETRY_COUNT_MAX} )) && [[ "${HTTP_RESPONSE}" != "200" ]]; do
             HTTP_RESPONSE=$(curl -s -o ${DIRTMP}/${EVENTID}__response.txt -w "%{http_code}" ${URL})
@@ -218,7 +230,7 @@ for EVENTID in ${EVENTIDS}; do
             rm ${DIRTMP}/${EVENTID}__response.txt
             error_msg "!!! Error retreaving \"${URL}\"; HTTP_RESPONSE=${HTTP_RESPONSE}"
         else
-            COUNTRY_CODE=$(cat ${DIRTMP}/${EVENTID}__response.txt)
+            COUNTRY_CODE=$(cat ${DIRTMP}/${EVENTID}__response.txt | head -1 | tr -dc '[:print:]')
             rm ${DIRTMP}/${EVENTID}__response.txt
         fi
         echo " COUNTRY_CODE=${COUNTRY_CODE}"
@@ -239,7 +251,6 @@ for EVENTID in ${EVENTIDS}; do
 	for SHAKEMAP_FILE_CONF in ${SHAKEMAP_FILES_CONF}; do
             git checkout ${SHAKEMAP_FILE_CONF}
 	done
-	echo ""
 
         echo " copy conf files"
 	if [[ "${COUNTRY_CODE}" == "CH" ]]; then
@@ -254,7 +265,7 @@ for EVENTID in ${EVENTIDS}; do
 	for SHAKEMAP_FILE_CONF in ${SHAKEMAP_FILES_CONF}; do
             if [[ -f ${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} ]]; then
                 cp -v ${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} ${DIRSHAKEMAP4_PROFILE_CONF}/
-		MAIL_GITHUB_CONF="${MAIL_GITHUB_CONF}\n${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF}"
+		MAIL_GITHUB_CONF="${MAIL_GITHUB_CONF} \n - ${MAIL_GITHUB_CONF_URL}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF}"
             else
                 echo " The file \"${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF}\" doesn't exist."
             fi
@@ -269,17 +280,20 @@ for EVENTID in ${EVENTIDS}; do
         # run ShakeMap
         echo -e " \
             Start ShakeMap for: \
-            \n \
-            EVENTID:${EVENTID} \
-            \n \
-            TIME:${TIME} \
-            \n \
-            MAG:${MAG} \
             \n\n \
-	    MAIL_GITHUB_CONF: \
-	    \n
-	    ${MAIL_GITHUB_CONF} \
-	    \n\n \
+            EVENTID: ${EVENTID} \
+            \n \
+            TIME: ${TIME} \
+            \n \
+            MAG: ${MAG} \
+            \n\n \
+            INPUT PARAMS FROM: \
+            - ${MAIL_GITHUB_EVENT_URL} \
+            \n\n \
+            INPUT CONF FROM: \
+	    \n \
+            ${MAIL_GITHUB_CONF} \
+            \n\n \
             DOCKER IMAGE: ${DOCKER_SHAKEMAP4_IMAGE} \
             \n\n \
             SCRIPT: ${DIRWORK}/$( basename ${0} ) \
@@ -310,12 +324,12 @@ for EVENTID in ${EVENTIDS}; do
         MAIL_JPGS=
         for FILE_JPG in $( ls ${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/products/*.jpg ); do
             if [ -f ${FILE_JPG} ]; then
-                MAIL_JPGS="${MAIL_JPGS} -A ${FILE_JPG}"
+                MAIL_JPGS="${MAIL_JPGS} -a ${FILE_JPG}"
             else
                 echo " the file \"${FILE_JPG}\" doesn't exist."
             fi
         done
-        echo -e "End ShakeMap for:\n EVENTID:${EVENTID}\n TIME:${TIME}\n MAG:${MAG}\n\n with data from:\n${MAIL_GITHUB_EVENT_URL}" | mutt -s "$(hostname -A) - End ShakeMap for ${EVENTID}" ${MAIL_TO} -a ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_JPGS}
+        echo -e "End ShakeMap for:\n\n EVENTID: ${EVENTID}\n TIME: ${TIME}\n MAG: ${MAG}\n\n INPUT PARAMS FROM:\n- ${MAIL_GITHUB_EVENT_URL}" | mutt -s "$(hostname) - End ShakeMap for ${EVENTID}" ${MAIL_TO} -a ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_JPGS}
         rm ${DIRTMP}/shakemap4__${EVENTID}.txt
         echo_date "Done"
         echo ""
