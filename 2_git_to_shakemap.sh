@@ -158,7 +158,7 @@ elif (( ${IN__REALTIME} == 0 )); then
 	    exit 0
     fi
 fi
-EVENTIDS="20220404_0000034" # To test
+EVENTIDS="20220503_0000135 20220404_0000034" # To test
 
 # Check EVENTIDS
 if [ -z "${EVENTIDS}" ]; then
@@ -196,6 +196,35 @@ for EVENTID in ${EVENTIDS}; do
         echo ""
 
         MAIL_GITHUB_EVENT_URL="https://github.com/INGV/shakemap-input-eu/blob/main/data/${EVENTID:0:6}/${EVENTID}/current"
+
+        # Get country code
+        echo_date "Get Country code:"
+        CURL_RETRY_COUNT=1
+        CURL_RETRY_COUNT_MAX=5
+        HTTP_RESPONSE=-99
+        URL="http://api.geonames.org/countryCode?lat=${LAT}&lng=${LON}&radius=0.01&username=spada"
+        echo " URL=${URL}"
+        while (( ${CURL_RETRY_COUNT} <= ${CURL_RETRY_COUNT_MAX} )) && [[ "${HTTP_RESPONSE}" != "200" ]]; do
+            HTTP_RESPONSE=$(curl -s -o ${DIRTMP}/${EVENTID}__response.txt -w "%{http_code}" ${URL})
+            echo "  HTTP_RESPONSE=${HTTP_RESPONSE}"
+            if [[ "${HTTP_RESPONSE}" != "200" ]];
+                sleep 2
+            fi
+            CURL_RETRY_COUNT=$(( ${CURL_RETRY_COUNT} + 1 ))
+        done
+        if (( ${CURL_RETRY_COUNT} > ${CURL_RETRY_COUNT_MAX} )) || [[ "${HTTP_RESPONSE}" != "200" ]]; then
+            rm ${DIRTMP}/${EVENTID}__response.txt
+            error_msg "!!! Error retreaving \"${URL}\"; HTTP_RESPONSE=${HTTP_RESPONSE}"
+        else
+            COUNTRY_CODE=$(cat ${DIRTMP}/${EVENTID}__response.txt)
+            rm ${DIRTMP}/${EVENTID}__response.txt
+        fi
+        echo " COUNTRY_CODE=${COUNTRY_CODE}"
+        echo_date "Done"
+        echo ""
+
+        # Set ShakeMap conf. by Country code
+        
 
         # run ShakeMap
         echo -e " \
