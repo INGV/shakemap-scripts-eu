@@ -245,12 +245,15 @@ for EVENTID in ${EVENTIDS}; do
 
 	echo " git status:"
 	git status . | grep "modified"
+	echo " done"
 	echo ""
 	
 	echo " git checkout conf. files"
 	for SHAKEMAP_FILE_CONF in ${SHAKEMAP_FILES_CONF}; do
             git checkout ${SHAKEMAP_FILE_CONF}
 	done
+	echo " done"
+	echo ""
 
         echo " copy conf files"
 	if [[ "${COUNTRY_CODE}" == "CH" ]]; then
@@ -265,11 +268,12 @@ for EVENTID in ${EVENTIDS}; do
 	for SHAKEMAP_FILE_CONF in ${SHAKEMAP_FILES_CONF}; do
             if [[ -f ${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} ]]; then
                 cp -v ${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} ${DIRSHAKEMAP4_PROFILE_CONF}/
-		MAIL_GITHUB_CONF="${MAIL_GITHUB_CONF} \n - ${MAIL_GITHUB_CONF_URL}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF}"
+		MAIL_GITHUB_CONF="${MAIL_GITHUB_CONF} - ${MAIL_GITHUB_CONF_URL}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} \n"
             else
                 echo " The file \"${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF}\" doesn't exist."
             fi
         done
+	echo " done"
 	echo ""
 
         cd -
@@ -293,6 +297,8 @@ for EVENTID in ${EVENTIDS}; do
             INPUT CONF FROM: \
 	    \n \
             ${MAIL_GITHUB_CONF} \
+	    \n\n \
+            COUNTRY_CODE: ${COUNTRY_CODE} \
             \n\n \
             DOCKER IMAGE: ${DOCKER_SHAKEMAP4_IMAGE} \
             \n\n \
