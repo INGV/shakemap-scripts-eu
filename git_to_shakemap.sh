@@ -176,6 +176,7 @@ fi
 # Check EVENTIDS
 if [ -z "${EVENTIDS}" ]; then
 	echo "No event(s) to elaborate"
+	remove_lock_file
 	echo ""
 	date_end
 	exit 0
@@ -373,7 +374,6 @@ fi
 if [ -f ${FILE_EVENTS_TO_ELABORATE}_tmp ]; then
     rm -f "${FILE_EVENTS_TO_ELABORATE}_tmp"
 fi
-# remove lock file
 remove_lock_file
 
 DATE_END=`date +%Y-%m-%d_%H:%M:%S`
