@@ -140,7 +140,9 @@ if (( ${IN__REALTIME} == 1 )); then
 	    rm ${DIRTMP}/make_pull_from_gitlab.sh.log
     fi
     echo ""
-#    ${DIRWORK}/make_pull_from_gitlab.sh -g ${DIRGITSHAKEMAP_FOR_PULL} -d ${DIRSHAKEMAP4_PROFILE_DATA} 2>&1 | tee -a ${DIRTMP}/make_pull_from_gitlab.sh.log
+
+    echo "${DIRWORK}/make_pull_from_gitlab.sh -g ${DIRGITSHAKEMAP_FOR_PULL} -d ${DIRSHAKEMAP4_PROFILE_DATA}"
+    ${DIRWORK}/make_pull_from_gitlab.sh -g ${DIRGITSHAKEMAP_FOR_PULL} -d ${DIRSHAKEMAP4_PROFILE_DATA} 2>&1 | tee -a ${DIRTMP}/make_pull_from_gitlab.sh.log
     echo_date "Done"
     echo ""
 
@@ -158,7 +160,7 @@ elif (( ${IN__REALTIME} == 0 )); then
 	    exit 0
     fi
 fi
-EVENTIDS="20220503_0000135 20220404_0000034" # To test
+#EVENTIDS="20220503_0000135 20220404_0000034" # To test
 
 # Check EVENTIDS
 if [ -z "${EVENTIDS}" ]; then
@@ -207,7 +209,7 @@ for EVENTID in ${EVENTIDS}; do
         while (( ${CURL_RETRY_COUNT} <= ${CURL_RETRY_COUNT_MAX} )) && [[ "${HTTP_RESPONSE}" != "200" ]]; do
             HTTP_RESPONSE=$(curl -s -o ${DIRTMP}/${EVENTID}__response.txt -w "%{http_code}" ${URL})
             echo "  HTTP_RESPONSE=${HTTP_RESPONSE}"
-            if [[ "${HTTP_RESPONSE}" != "200" ]];
+            if [[ "${HTTP_RESPONSE}" != "200" ]]; then
                 sleep 2
             fi
             CURL_RETRY_COUNT=$(( ${CURL_RETRY_COUNT} + 1 ))
@@ -223,12 +225,50 @@ for EVENTID in ${EVENTIDS}; do
         echo_date "Done"
         echo ""
 
-        # Set ShakeMap conf. by Country code
-        
+        # START - Set ShakeMap conf. by Country code
+        echo_date "Set ShakeMap conf. by Country code:"
+	SHAKEMAP_FILES_CONF="gmpe_sets.conf model.conf modules.conf products.conf select.conf"
+	DIRSHAKEMAP4_PROFILE_CONF="${DIRSHAKEMAP4_PROFILE}/install/config"
+	cd ${DIRSHAKEMAP4_PROFILE_CONF}
+
+	echo " git status:"
+	git status . | grep "modified"
+	echo ""
+	
+	echo " git checkout conf. files"
+	for SHAKEMAP_FILE_CONF in ${SHAKEMAP_FILES_CONF}; do
+            git checkout ${SHAKEMAP_FILE_CONF}
+	done
+	echo ""
+
+        echo " copy conf files"
+	if [[ "${COUNTRY_CODE}" == "CH" ]]; then
+            DIR_INSTITUTE="eth"
+        elif [[ "${COUNTRY_CODE}" == "GR" ]]; then 
+            DIR_INSTITUTE="greece"
+        else
+            DIR_INSTITUTE="ingv"
+        fi
+
+	MAIL_GITHUB_CONF=
+	for SHAKEMAP_FILE_CONF in ${SHAKEMAP_FILES_CONF}; do
+            if [[ -f ${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} ]]; then
+                cp -v ${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} ${DIRSHAKEMAP4_PROFILE_CONF}/
+		MAIL_GITHUB_CONF="${MAIL_GITHUB_CONF}\n${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF}"
+            else
+                echo " The file \"${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF}\" doesn't exist."
+            fi
+        done
+	echo ""
+
+        cd -
+        echo_date "Done"
+        echo ""
+        # END - Set ShakeMap conf. by Country code
 
         # run ShakeMap
         echo -e " \
-            Start new ShakeMap for: \
+            Start ShakeMap for: \
             \n \
             EVENTID:${EVENTID} \
             \n \
@@ -236,13 +276,17 @@ for EVENTID in ${EVENTIDS}; do
             \n \
             MAG:${MAG} \
             \n\n \
+	    MAIL_GITHUB_CONF: \
+	    \n
+	    ${MAIL_GITHUB_CONF} \
+	    \n\n \
             DOCKER IMAGE: ${DOCKER_SHAKEMAP4_IMAGE} \
             \n\n \
             SCRIPT: ${DIRWORK}/$( basename ${0} ) \
             \n \
             HOST: $( hostname -f ) \
             \n\n \
-        " | mail -s "$(hostname) - Start ShakeMap for ${EVENTID}" ${MAIL_TO} 
+        " | mutt -s "$(hostname) - Start ShakeMap for ${EVENTID}" ${MAIL_TO} 
         #cd ${DIRSHAKEMAP4} 
 
         # Set 'select' module only for event M<7. Issue: https://gitlab.rm.ingv.it/shakemap/shakemap4/-/issues/15
@@ -254,8 +298,9 @@ for EVENTID in ${EVENTIDS}; do
         # Run docker
         COMMAND="time docker run --rm --name shakemap4__${EVENTID} -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c\"shake ${EVENTID} ${MODULE_SELECT} assemble -c \\\"SM4 run\\\" model contour shape info stations raster rupture gridxml history plotregr mapping\" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}.txt "
         echo "COMMAND=${COMMAND}"
-        exit
-        time docker run --rm --name shakemap4__${EVENTID} -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c"shake ${EVENTID} ${MODULE_SELECT} assemble -c \"SM4 run\" model contour shape info stations raster rupture gridxml history plotregr mapping" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}.txt 
+	eval ${COMMAND}
+        #exit
+        #time docker run --rm --name shakemap4__${EVENTID} -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c"shake ${EVENTID} ${MODULE_SELECT} assemble -c \"SM4 run\" model contour shape info stations raster rupture gridxml history plotregr mapping" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}.txt 
 
         #cd -
         echo ""
@@ -270,7 +315,7 @@ for EVENTID in ${EVENTIDS}; do
                 echo " the file \"${FILE_JPG}\" doesn't exist."
             fi
         done
-        echo -e "End new ShakeMap for:\n EVENTID:${EVENTID}\n OT:${TIME}\n MAG:${MAG}\n\n with data from:\n${MAIL_GITHUB_EVENT_URL%?}" | mail -s "$(hostname -A) - End ShakeMap for ${EVENTID}" -A ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_JPGS} ${MAIL_TO}  
+        echo -e "End ShakeMap for:\n EVENTID:${EVENTID}\n TIME:${TIME}\n MAG:${MAG}\n\n with data from:\n${MAIL_GITHUB_EVENT_URL}" | mutt -s "$(hostname -A) - End ShakeMap for ${EVENTID}" ${MAIL_TO} -a ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_JPGS}
         rm ${DIRTMP}/shakemap4__${EVENTID}.txt
         echo_date "Done"
         echo ""
@@ -302,15 +347,13 @@ echo ""
 
 # remove event(s) file
 if [ -f ${FILE_EVENTS_TO_ELABORATE} ]; then
-	${RM} -f "${FILE_EVENTS_TO_ELABORATE}"
+    rm -f "${FILE_EVENTS_TO_ELABORATE}"
 fi
 if [ -f ${FILE_EVENTS_TO_ELABORATE}_tmp ]; then
-        ${RM} -f "${FILE_EVENTS_TO_ELABORATE}_tmp"
+    rm -f "${FILE_EVENTS_TO_ELABORATE}_tmp"
 fi
 # remove lock file
-if [ -f ${LCK_FILE} ]; then
-	${RM} -f "${LCK_FILE}"
-fi
+remove_lock_file
 
 DATE_END=`date +%Y-%m-%d_%H:%M:%S`
 date_end

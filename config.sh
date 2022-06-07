@@ -6,7 +6,7 @@
 #
 
 # Check software(s)
-for PROGRAM in mkdir bc git mail docker tr date ; do
+for PROGRAM in mkdir bc git mutt docker tr date ; do
     command -v ${PROGRAM} >/dev/null 2>&1 || { echo >&2 " \"${PROGRAM}\" program doesn't exist.  Aborting."; exit 1; }
 done
 
@@ -16,12 +16,11 @@ DIRWORK=$( cd $(dirname $0) ; pwd)
 DIRTMP=${DIRWORK}/tmp
 DIRLOG=${DIRWORK}/log
 DIRLOCK=${DIRWORK}/lock
-DIRSHAKEMAP4=/Users/valentino/gitwork/gitlab/_shakemap/shakemap4
-#DIRSHAKEMAP4=/home/shake/gitwork/_shakemap/shakemap4
+DIRSHAKEMAP4=/home/shake/gitwork/_shakemap/shakemap4
 DIRSHAKEMAP4_WEB=/home/shake/gitwork/_INGV/shakemap4-web
-DIRSHAKEMAP_CONFIGURATION=/home/shake/gitwork/_INGV/shakemap-conf-eu
+DIRSHAKEMAP_CONFIGURATIONS=/home/shake/gitwork/_INGV/shakemap-conf-eu/config
 FILE_EVENTS_TO_ELABORATE=${DIRTMP}/$(basename $0)__FILE_EVENTS_TO_ELABORATE__$(date +%Y%m%dT%H%M%S)
-#DIRGITSHAKEMAP_FOR_PULL="/home/shake/gitwork/_INGV/shakemap-input-eu__to_pull" # !!! This must be the absolute path !!!
+DIRGITSHAKEMAP_FOR_PULL="/home/shake/gitwork/_INGV/shakemap-input-eu__to_pull" # !!! This must be the absolute path !!!
 SLACK_CHANNEL="#valentino_debug"
 SLACK_HOOK_URL=""
 #MAIL_TO="valentino.lauciani@ingv.it,alberto.michelini@ingv.it,dario.jozinovic@ingv.it,licia.faenza@ingv.it,ilaria.oliveti@ingv.it,emanuele.casarotti@ingv.it"
@@ -47,7 +46,7 @@ function error_msg () {
     if [ -f "${2}" ]; then
         cat ${2}
     fi
-    echo "${MSG}" | mail -s "${HOSTNAME} - $(basename $0)" valentino.lauciani@ingv.it
+    echo "${MSG}" | mutt -s "${HOSTNAME} - $(basename $0)" valentino.lauciani@ingv.it
     remove_lock_file
     date_end
     exit 1
@@ -152,8 +151,8 @@ if [ ! -d ${DIRGITSHAKEMAP_FOR_PULL} ]; then
 fi
 
 #
-if [ ! -d ${DIRSHAKEMAP_CONFIGURATION} ]; then
-    echo " the directory \"${DIRSHAKEMAP_CONFIGURATION}\" doesn't exist; please, set variable into \"$(basename $0)\" file and try again."
+if [ ! -d ${DIRSHAKEMAP_CONFIGURATIONS} ]; then
+    echo " the directory \"${DIRSHAKEMAP_CONFIGURATIONS}\" doesn't exist; please, set variable into \"$(basename $0)\" file and try again."
     echo ""
     exit 1
 fi

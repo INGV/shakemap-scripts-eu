@@ -25,9 +25,9 @@ function syntax () {
 ### START - Check parameters ###
 IN__DIRDATA=
 IN__DIRGITSHAKEMAP_FOR_PULL=
-while getopts d:g:h OPTION
+while getopts "d:g:h" OPTION
 do
-        case ${OPTION} in
+        case "${OPTION}" in
         d)
             IN__DIRDATA="${OPTARG}"
             ;;
@@ -51,7 +51,6 @@ do
             ;;
         esac
 done
-
 if ((OPTIND == 1)); then
     echo "No options specified"
 	syntax
@@ -132,7 +131,7 @@ if [[ -s ${DIRTMP}/updated_file_form_git.txt ]]; then
 	while read FILE; do
 		EVENTID=$( echo ${FILE} | awk -F"/" '{print $3}' )
 		EVENTID_SUB=$( echo ${FILE} | awk -F"/" '{print $2}' )
-        echo ${EVENTID} >> ${DIRTMP}/eventids.txt
+                echo ${EVENTID} >> ${DIRTMP}/eventids.txt
 		echo " FILE=${FILE}"
 		FILE_WITHOUT_EVENTID_SUB=$( echo ${FILE} | sed "s/${EVENTID_SUB}\///" )
 		echo " FILE_WITHOUT_EVENTID_SUB=${FILE_WITHOUT_EVENTID_SUB}"
@@ -167,6 +166,8 @@ echo ""
 echo_date "Print eventid(s) changed:"
 EVENTIDS=
 if [[ -f ${DIRTMP}/eventids.txt ]]; then
+    sort -u ${DIRTMP}/eventids.txt > ${DIRTMP}/eventids.txt.new
+    mv ${DIRTMP}/eventids.txt.new ${DIRTMP}/eventids.txt
     EVENTIDS=$( tr -s '\n'  ' ' < ${DIRTMP}/eventids.txt )
 fi
 echo "EVENTIDS=${EVENTIDS}"
