@@ -91,7 +91,7 @@ date_start
 ### START - Check if the script already running ###
 # make directory if not exists
 if [ ! -d ${DIRLOCK} ]; then
-	mkdir ${DIRLOCK}
+    mkdir ${DIRLOCK}
 fi
 if [ ! -d ${DIRTMP} ]; then
     mkdir ${DIRTMP}
@@ -149,6 +149,7 @@ if (( ${IN__REALTIME} == 1 )); then
     echo_date "Get eventid(s) changed:"
     EVENTIDS=$( grep "EVENTIDS=" ${DIRTMP}/make_pull_from_gitlab.sh.log | awk -F"=" '{print $2}' )
     echo "EVENTIDS=${EVENTIDS}"
+    rm ${DIRTMP}/make_pull_from_gitlab.sh.log
     echo_date "Done"
     echo ""
 elif (( ${IN__REALTIME} == 0 )); then
