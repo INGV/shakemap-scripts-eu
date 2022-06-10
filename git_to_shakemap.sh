@@ -345,7 +345,32 @@ for EVENTID in ${EVENTIDS}; do
                 echo " the file \"${FILE_JPG}\" doesn't exist."
             fi
         done
-        echo -e "End ShakeMap for:\n\n EVENTID: ${EVENTID}\n TIME: ${TIME}\n MAG: ${MAG}\n\n INPUT PARAMS FROM:\n- ${MAIL_GITHUB_EVENT_URL}" | mutt -s "$(hostname) - End ShakeMap for ${EVENTID}" ${MAIL_TO} -a ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_JPGS}
+        echo -e " \
+            End ShakeMap for: \
+            \n\n \
+            EVENTID: ${EVENTID} \
+            \n \
+            TIME: ${TIME} \
+            \n \
+            MAG: ${MAG} \
+            \n\n \
+            INPUT PARAMS FROM: \
+	    \n \
+            - ${MAIL_GITHUB_EVENT_URL} \
+            \n\n \
+            INPUT CONF FROM: \
+	    \n \
+            ${MAIL_GITHUB_CONF} \
+	    \n\n \
+            COUNTRY_CODE: ${COUNTRY_CODE} \
+            \n\n \
+            DOCKER IMAGE: ${DOCKER_SHAKEMAP4_IMAGE} \
+            \n\n \
+            SCRIPT: ${DIRWORK}/$( basename ${0} ) \
+            \n \
+            HOST: $( hostname -f ) \
+            \n\n \
+        " | mutt -s "$(hostname) - End ShakeMap for ${EVENTID}" ${MAIL_TO} -a ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_JPGS}
         rm ${DIRTMP}/shakemap4__${EVENTID}.txt
         echo_date "Done"
         echo ""
