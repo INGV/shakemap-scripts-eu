@@ -299,6 +299,8 @@ for EVENTID in ${EVENTIDS}; do
             TIME: ${TIME} \
             \n \
             MAG: ${MAG} \
+	    \n \
+            COUNTRY_CODE: ${COUNTRY_CODE} \
             \n\n \
             INPUT PARAMS FROM: \
 	    \n \
@@ -308,10 +310,8 @@ for EVENTID in ${EVENTIDS}; do
 	    \n \
             ${MAIL_GITHUB_CONF} \
 	    \n\n \
-            COUNTRY_CODE: ${COUNTRY_CODE} \
-            \n\n \
             DOCKER IMAGE: ${DOCKER_SHAKEMAP4_IMAGE} \
-            \n\n \
+            \n \
             SCRIPT: ${DIRWORK}/$( basename ${0} ) \
             \n \
             HOST: $( hostname -f ) \
@@ -353,6 +353,8 @@ for EVENTID in ${EVENTIDS}; do
             TIME: ${TIME} \
             \n \
             MAG: ${MAG} \
+	    \n \
+            COUNTRY_CODE: ${COUNTRY_CODE} \
             \n\n \
             INPUT PARAMS FROM: \
 	    \n \
@@ -362,10 +364,8 @@ for EVENTID in ${EVENTIDS}; do
 	    \n \
             ${MAIL_GITHUB_CONF} \
 	    \n\n \
-            COUNTRY_CODE: ${COUNTRY_CODE} \
-            \n\n \
             DOCKER IMAGE: ${DOCKER_SHAKEMAP4_IMAGE} \
-            \n\n \
+            \n \
             SCRIPT: ${DIRWORK}/$( basename ${0} ) \
             \n \
             HOST: $( hostname -f ) \
