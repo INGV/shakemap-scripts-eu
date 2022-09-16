@@ -24,7 +24,7 @@ DIRGITSHAKEMAP_FOR_PULL="/home/shake/gitwork/_INGV/shakemap-input-eu__to_pull" #
 SLACK_CHANNEL="#valentino_debug"
 SLACK_HOOK_URL=""
 #MAIL_TO="valentino.lauciani@ingv.it,alberto.michelini@ingv.it,dario.jozinovic@ingv.it,licia.faenza@ingv.it,ilaria.oliveti@ingv.it,emanuele.casarotti@ingv.it"
-MAIL_TO="valentino.lauciani@ingv.it,alberto.michelini@ingv.it,licia.faenza@ingv.it,ilaria.oliveti@ingv.it,shakemapeu@sed.ethz.ch,shakemapEU@itsak.gr"
+MAIL_TO="valentino.lauciani@ingv.it,alberto.michelini@ingv.it,licia.faenza@ingv.it,ilaria.oliveti@ingv.it,shakemapeu@sed.ethz.ch,shakemapEU@itsak.gr,shakemap@ingv.it"
 DOCKER_SHAKEMAP4_IMAGE="shakemap4:4.1.2"
 ### END - Config ###
 
@@ -46,7 +46,7 @@ function error_msg () {
     if [ -f "${2}" ]; then
         cat ${2}
     fi
-    echo "${MSG}" | mutt -s "${HOSTNAME} - $(basename $0)" valentino.lauciani@ingv.it
+    echo "${MSG}" | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "${HOSTNAME} - $(basename $0)" valentino.lauciani@ingv.it
     remove_lock_file
     date_end
     exit 1

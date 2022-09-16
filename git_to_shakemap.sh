@@ -316,7 +316,7 @@ for EVENTID in ${EVENTIDS}; do
             \n \
             HOST: $( hostname -f ) \
             \n\n \
-        " | mutt -s "$(hostname) - Start ShakeMap for ${EVENTID}" ${MAIL_TO} 
+        " | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "$(hostname) - Start ShakeMap for ${EVENTID}" ${MAIL_TO} 
         #cd ${DIRSHAKEMAP4} 
 
         # Set 'select' module only for event M<7. Issue: https://gitlab.rm.ingv.it/shakemap/shakemap4/-/issues/15
@@ -370,7 +370,7 @@ for EVENTID in ${EVENTIDS}; do
             \n \
             HOST: $( hostname -f ) \
             \n\n \
-        " | mutt -s "$(hostname) - End ShakeMap for ${EVENTID}" ${MAIL_TO} -a ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_JPGS}
+        " | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "$(hostname) - End ShakeMap for ${EVENTID}" ${MAIL_TO} -a ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_JPGS}
         rm ${DIRTMP}/shakemap4__${EVENTID}.txt
         echo_date "Done"
         echo ""
