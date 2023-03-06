@@ -25,7 +25,8 @@ SLACK_CHANNEL="#valentino_debug"
 SLACK_HOOK_URL=""
 #MAIL_TO="valentino.lauciani@ingv.it,alberto.michelini@ingv.it,dario.jozinovic@ingv.it,licia.faenza@ingv.it,ilaria.oliveti@ingv.it,emanuele.casarotti@ingv.it"
 MAIL_TO="valentino.lauciani@ingv.it,alberto.michelini@ingv.it,licia.faenza@ingv.it,ilaria.oliveti@ingv.it,shakemapeu@sed.ethz.ch,shakemapEU@itsak.gr,shakemap@ingv.it"
-DOCKER_SHAKEMAP4_IMAGE="shakemap4:4.1.2"
+#DOCKER_SHAKEMAP4_IMAGE="shakemap4:4.1.2"
+DOCKER_SHAKEMAP4_IMAGE="shakemap4:4.1.4_f23f1ae"
 ### END - Config ###
 
 ### END - Functions ###
