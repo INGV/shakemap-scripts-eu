@@ -273,7 +273,7 @@ for EVENTID in ${EVENTIDS}; do
         #    DIR_INSTITUTE="ingv"
         #fi
         if [[ "${COUNTRY_CODE}" == "CH" ]]; then
-            DIR_INSTITUTE="eth"
+            DIR_INSTITUTE="switzerland"
         elif [[ "${COUNTRY_CODE}" == "GR" ]]; then 
             DIR_INSTITUTE="greece"
         elif [[ "${COUNTRY_CODE}" == "AL" ]]; then 
@@ -289,7 +289,7 @@ for EVENTID in ${EVENTIDS}; do
         elif [[ "${COUNTRY_CODE}" == "BE" ]]; then 
             DIR_INSTITUTE="belgium"
         else
-            DIR_INSTITUTE="ingv"
+            DIR_INSTITUTE="italy"
         fi
 
         MAIL_GITHUB_CONF=
