@@ -24,7 +24,7 @@ DIRGITSHAKEMAP_FOR_PULL="/home/shake/gitwork/_INGV/shakemap-input-eu__to_pull" #
 SLACK_CHANNEL="#valentino_debug"
 SLACK_HOOK_URL=""
 #MAIL_TO="valentino.lauciani@ingv.it,alberto.michelini@ingv.it,dario.jozinovic@ingv.it,licia.faenza@ingv.it,ilaria.oliveti@ingv.it,emanuele.casarotti@ingv.it"
-MAIL_TO="valentino.lauciani@ingv.it,alberto.michelini@ingv.it,licia.faenza@ingv.it,ilaria.oliveti@ingv.it,shakemapeu@sed.ethz.ch,shakemapEU@itsak.gr,shakemap@ingv.it"
+MAIL_TO="valentino.lauciani@ingv.it,alberto.michelini@ingv.it,licia.faenza@ingv.it,ilaria.oliveti@ingv.it,shakemapeu@sed.ethz.ch,shakemapEU@itsak.gr,shakemap@ingv.it,e.dushi@geo.edu.al,b.rama@geo.edu.al,polona.zupancic@gov.si,martina.carman@gov.si,kresimir.kuk@gfz.hr,bgrecu@infp.ro,viorel@infp.ro,marmura@infp.ro,kris.vanneste@oma.be,Thomas.Lecocq@seismology.be,koen.vannoten@seismology.be,antoine.schlupp@unistra.fr,vmendel@unistra.fr,marc.grunberg@unistra.fr"
 #DOCKER_SHAKEMAP4_IMAGE="shakemap4:4.1.2"
 DOCKER_SHAKEMAP4_IMAGE="shakemap4:4.1.4_f23f1ae"
 ### END - Config ###
