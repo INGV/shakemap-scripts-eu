@@ -241,49 +241,68 @@ for EVENTID in ${EVENTIDS}; do
 
         # START - Set ShakeMap conf. by Country code
         echo_date "Set ShakeMap conf. by Country code:"
-	SHAKEMAP_FILES_CONF="gmpe_sets.conf model.conf modules.conf products.conf select.conf"
-	DIRSHAKEMAP4_PROFILE_CONF="${DIRSHAKEMAP4_PROFILE}/install/config"
+        SHAKEMAP_FILES_CONF="gmpe_sets.conf model.conf modules.conf products.conf select.conf"
+        DIRSHAKEMAP4_PROFILE_CONF="${DIRSHAKEMAP4_PROFILE}/install/config"
 
-	echo " git pull last conf(s) into \"${DIRSHAKEMAP_CONFIGURATIONS}\":"
-	cd ${DIRSHAKEMAP_CONFIGURATIONS}
-	git pull
-	cd -
-	echo " done"
-	echo ""
+        echo " git pull last conf(s) into \"${DIRSHAKEMAP_CONFIGURATIONS}\":"
+        cd ${DIRSHAKEMAP_CONFIGURATIONS}
+        git pull
+        cd -
+        echo " done"
+        echo ""
 
-	echo " git status into \"${DIRSHAKEMAP4_PROFILE_CONF}\":"
-	cd ${DIRSHAKEMAP4_PROFILE_CONF}
-	git status . | grep "modified"
-	echo " done"
-	echo ""
-	
-	echo " git checkout conf. files"
-	for SHAKEMAP_FILE_CONF in ${SHAKEMAP_FILES_CONF}; do
-            git checkout ${SHAKEMAP_FILE_CONF}
-	done
-	echo " done"
-	echo ""
+        echo " git status into \"${DIRSHAKEMAP4_PROFILE_CONF}\":"
+        cd ${DIRSHAKEMAP4_PROFILE_CONF}
+        git status . | grep "modified"
+        echo " done"
+        echo ""
+
+        echo " git checkout conf. files"
+        for SHAKEMAP_FILE_CONF in ${SHAKEMAP_FILES_CONF}; do
+                git checkout ${SHAKEMAP_FILE_CONF}
+        done
+        echo " done"
+        echo ""
 
         echo " copy conf files"
-	if [[ "${COUNTRY_CODE}" == "CH" ]]; then
+        #if [[ "${COUNTRY_CODE}" == "CH" ]]; then
+        #    DIR_INSTITUTE="eth"
+        #elif [[ "${COUNTRY_CODE}" == "GR" ]]; then 
+        #    DIR_INSTITUTE="greece"
+        #else
+        #    DIR_INSTITUTE="ingv"
+        #fi
+        if [[ "${COUNTRY_CODE}" == "CH" ]]; then
             DIR_INSTITUTE="eth"
         elif [[ "${COUNTRY_CODE}" == "GR" ]]; then 
             DIR_INSTITUTE="greece"
+        elif [[ "${COUNTRY_CODE}" == "AL" ]]; then 
+            DIR_INSTITUTE="albania"
+        elif [[ "${COUNTRY_CODE}" == "HR" ]]; then 
+            DIR_INSTITUTE="croatia"
+        elif [[ "${COUNTRY_CODE}" == "SI" ]]; then 
+            DIR_INSTITUTE="slovenia"
+        elif [[ "${COUNTRY_CODE}" == "RO" ]]; then 
+            DIR_INSTITUTE="romania"
+        elif [[ "${COUNTRY_CODE}" == "FR" ]]; then 
+            DIR_INSTITUTE="france"
+        elif [[ "${COUNTRY_CODE}" == "BE" ]]; then 
+            DIR_INSTITUTE="belgium"
         else
             DIR_INSTITUTE="ingv"
         fi
 
-	MAIL_GITHUB_CONF=
-	for SHAKEMAP_FILE_CONF in ${SHAKEMAP_FILES_CONF}; do
-            if [[ -f ${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} ]]; then
-                cp -v ${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} ${DIRSHAKEMAP4_PROFILE_CONF}/
-		MAIL_GITHUB_CONF="${MAIL_GITHUB_CONF} - ${MAIL_GITHUB_CONF_URL}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} \n"
-            else
-                echo " The file \"${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF}\" doesn't exist."
-            fi
-        done
-	echo " done"
-	echo ""
+        MAIL_GITHUB_CONF=
+        for SHAKEMAP_FILE_CONF in ${SHAKEMAP_FILES_CONF}; do
+                if [[ -f ${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} ]]; then
+                    cp -v ${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} ${DIRSHAKEMAP4_PROFILE_CONF}/
+            MAIL_GITHUB_CONF="${MAIL_GITHUB_CONF} - ${MAIL_GITHUB_CONF_URL}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF} \n"
+                else
+                    echo " The file \"${DIRSHAKEMAP_CONFIGURATIONS}/${DIR_INSTITUTE}/${SHAKEMAP_FILE_CONF}\" doesn't exist."
+                fi
+            done
+        echo " done"
+        echo ""
 
         cd -
         echo_date "Done"
@@ -292,30 +311,30 @@ for EVENTID in ${EVENTIDS}; do
 
         # run ShakeMap
         echo -e " \
-            Start ShakeMap for: \
-            \n\n \
-            EVENTID: ${EVENTID} \
-            \n \
-            TIME: ${TIME} \
-            \n \
-            MAG: ${MAG} \
-	    \n \
-            COUNTRY_CODE: ${COUNTRY_CODE} \
-            \n\n \
-            INPUT PARAMS FROM: \
-	    \n \
-            - ${MAIL_GITHUB_EVENT_URL} \
-            \n\n \
-            INPUT CONF FROM: \
-	    \n \
-            ${MAIL_GITHUB_CONF} \
-	    \n\n \
-            DOCKER IMAGE: ${DOCKER_SHAKEMAP4_IMAGE} \
-            \n \
-            SCRIPT: ${DIRWORK}/$( basename ${0} ) \
-            \n \
-            HOST: $( hostname -f ) \
-            \n\n \
+        Start ShakeMap for: \
+        \n\n \
+        EVENTID: ${EVENTID} \
+        \n \
+        TIME: ${TIME} \
+        \n \
+        MAG: ${MAG} \
+        \n \
+        COUNTRY_CODE: ${COUNTRY_CODE} \
+        \n\n \
+        INPUT PARAMS FROM: \
+        \n \
+        - ${MAIL_GITHUB_EVENT_URL} \
+        \n\n \
+        INPUT CONF FROM: \
+        \n \
+        ${MAIL_GITHUB_CONF} \
+        \n\n \
+        DOCKER IMAGE: ${DOCKER_SHAKEMAP4_IMAGE} \
+        \n \
+        SCRIPT: ${DIRWORK}/$( basename ${0} ) \
+        \n \
+        HOST: $( hostname -f ) \
+        \n\n \
         " | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "$(hostname) - Start ShakeMap for ${EVENTID}" ${MAIL_TO} 
         #cd ${DIRSHAKEMAP4} 
 
@@ -328,7 +347,7 @@ for EVENTID in ${EVENTIDS}; do
         # Run docker
         COMMAND="time docker run --rm --name shakemap4__${EVENTID} -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c\"shake ${EVENTID} ${MODULE_SELECT} assemble -c \\\"SM4 run\\\" model contour shape info stations raster rupture gridxml history plotregr mapping\" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}.txt "
         echo "COMMAND=${COMMAND}"
-	eval ${COMMAND}
+        eval ${COMMAND}
         #exit
         #time docker run --rm --name shakemap4__${EVENTID} -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c"shake ${EVENTID} ${MODULE_SELECT} assemble -c \"SM4 run\" model contour shape info stations raster rupture gridxml history plotregr mapping" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}.txt 
 
