@@ -16,7 +16,7 @@ function syntax () {
     echo "-e by fk_event"
     echo "-r real-time mode"
     echo "-p profile [world|italy]"
-    echo "-l felt-report mode: if felt-report data file exists, also run ShakeMap for _fr variant"
+    echo "-l reported-intensity mode: if reported-intensity data file exists, also run ShakeMap for _fr variant"
     echo ""
     echo "Example with -e option: $( basename ${0} ) -e 5269671 -p world"
     echo "Example with -r option: $( basename ${0} ) -r -p world"
@@ -215,14 +215,14 @@ for EVENTID in ${EVENTIDS}; do
         echo " NETWORK=${NETWORK}"
         echo ""
 
-        # START - Felt-report variant
+        # START - Reported-Intensity variant
         HAS_FR=0
         if (( ${IN__FELTREPORT} == 1 )); then
-            FILE_FR_TEST="${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/${EVENTID}_FELT-REPORT_dat.xml.test"
-            echo_date "Check felt-report file:"
+            FILE_FR_TEST="${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/${EVENTID}_REPORTED-INTENSITY_dat.xml.test"
+            echo_date "Check reported-intensity file:"
             echo " FILE_FR_TEST=${FILE_FR_TEST}"
             if [[ -f ${FILE_FR_TEST} ]]; then
-                echo " Felt-report test file found. Creating _fr variant directory."
+                echo " Reported-Intensity test file found. Creating _fr variant directory."
                 HAS_FR=1
                 DIRFR="${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}_fr"
                 # Remove existing _fr directory to recreate from scratch (handles git pull updates)
@@ -231,15 +231,15 @@ for EVENTID in ${EVENTIDS}; do
                 fi
                 mkdir -p ${DIRFR}/current
                 cp -v ${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/* ${DIRFR}/current/
-                mv ${DIRFR}/current/${EVENTID}_FELT-REPORT_dat.xml.test ${DIRFR}/current/${EVENTID}_FELT-REPORT_dat.xml
+                mv ${DIRFR}/current/${EVENTID}_REPORTED-INTENSITY_dat.xml.test ${DIRFR}/current/${EVENTID}_REPORTED-INTENSITY_dat.xml
                 echo " _fr variant directory created: ${DIRFR}"
             else
-                echo " No felt-report test file found. Skipping _fr variant."
+                echo " No reported-intensity test file found. Skipping _fr variant."
             fi
             echo_date "Done"
             echo ""
         fi
-        # END - Felt-report variant
+        # END - Reported-Intensity variant
 
         # Set Mail variables
         MAIL_GITHUB_EVENT_URL="https://github.com/INGV/shakemap-input-eu/blob/main/data/${EVENTID:0:6}/${EVENTID}/current"
@@ -341,11 +341,11 @@ for EVENTID in ${EVENTIDS}; do
         echo ""
         # END - Set ShakeMap conf. by Country code
 
-        # Prepare felt-report info for email
+        # Prepare reported-intensity info for email
         MAIL_FR_INFO=""
         MAIL_SUBJECT_FR=""
         if (( ${HAS_FR} == 1 )); then
-            MAIL_FR_INFO="FELT-REPORT: Yes (also processing ${EVENTID}_fr variant in parallel)"
+            MAIL_FR_INFO="REPORTED-INTENSITY: Yes (also processing ${EVENTID}_fr variant in parallel)"
             MAIL_SUBJECT_FR=" [+FR]"
         fi
 
