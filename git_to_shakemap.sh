@@ -388,22 +388,22 @@ for EVENTID in ${EVENTIDS}; do
 
         # Run docker for EVENTID
         echo_date "START - Docker run for ${EVENTID}"
-        SECONDS_MAIN=0
+        SECONDS=0
         COMMAND="time docker run --rm --name shakemap4__${EVENTID} -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c\"shake ${EVENTID} ${MODULE_SELECT} assemble -c \\\"SM4 run\\\" model contour shape info stations raster rupture gridxml history plotregr mapping\" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}.txt "
         echo "COMMAND=${COMMAND}"
         eval ${COMMAND}
-        ELAPSED_MAIN=${SECONDS_MAIN}
-        echo_date "END - Docker run for ${EVENTID} (elapsed: $(( ${ELAPSED_MAIN} / 60 ))m $(( ${ELAPSED_MAIN} % 60 ))s)"
+        ELAPSED=${SECONDS}
+        echo_date "END - Docker run for ${EVENTID} (elapsed: $(( ${ELAPSED} / 60 ))m $(( ${ELAPSED} % 60 ))s)"
 
         if (( ${HAS_FR} == 1 )); then
             # Run docker for EVENTID_fr
             echo_date "START - Docker run for ${EVENTID}_fr"
-            SECONDS_FR=0
+            SECONDS=0
             COMMAND_FR="time docker run --rm --name shakemap4__${EVENTID}_fr -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c\"shake ${EVENTID}_fr ${MODULE_SELECT} assemble -c \\\"SM4 run\\\" model contour shape info stations raster rupture gridxml history plotregr mapping\" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}_fr.txt "
             echo "COMMAND_FR=${COMMAND_FR}"
             eval ${COMMAND_FR}
-            ELAPSED_FR=${SECONDS_FR}
-            echo_date "END - Docker run for ${EVENTID}_fr (elapsed: $(( ${ELAPSED_FR} / 60 ))m $(( ${ELAPSED_FR} % 60 ))s)"
+            ELAPSED=${SECONDS}
+            echo_date "END - Docker run for ${EVENTID}_fr (elapsed: $(( ${ELAPSED} / 60 ))m $(( ${ELAPSED} % 60 ))s)"
         fi
         echo ""
 
