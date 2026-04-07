@@ -12,13 +12,15 @@
 function syntax () {
     echo ""
     echo "Syntax:"
-    echo "`basename $0` [ -e <fk_event> | -r ] | -h | --help"
-    echo "-e by fk_event" 
+    echo "`basename $0` [ -e <fk_event> | -r ] [-l] | -h | --help"
+    echo "-e by fk_event"
     echo "-r real-time mode"
     echo "-p profile [world|italy]"
+    echo "-l felt-report mode: if felt-report data file exists, also run ShakeMap for _fr variant"
     echo ""
     echo "Example with -e option: $( basename ${0} ) -e 5269671 -p world"
     echo "Example with -r option: $( basename ${0} ) -r -p world"
+    echo "Example with -l option: $( basename ${0} ) -r -p world -l"
     echo ""        
 	exit 1
 }
@@ -29,7 +31,8 @@ function syntax () {
 IN__EVENTID=
 IN__PROFILE=
 IN__REALTIME=0
-while getopts :e:p:rh OPTION
+IN__FELTREPORT=0
+while getopts :e:p:rlh OPTION
 do
 	case ${OPTION} in
 		e)  	
@@ -42,9 +45,12 @@ do
 			IN__PROFILE="${OPTARG}"
 			[[ ${IN__PROFILE} == "world"  || ${IN__PROFILE} == "italy" ]] || syntax
                 	;;
-		r)  
+		r)
 			IN__REALTIME=1
                 	;;
+		l)
+			IN__FELTREPORT=1
+			;;
 		\?)
 			echo "Unknown option: -$OPTARG" >&2
 			exit 1
@@ -209,6 +215,32 @@ for EVENTID in ${EVENTIDS}; do
         echo " NETWORK=${NETWORK}"
         echo ""
 
+        # START - Felt-report variant
+        HAS_FR=0
+        if (( ${IN__FELTREPORT} == 1 )); then
+            FILE_FR_TEST="${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/${EVENTID}_FELT-REPORT_dat.xml.test"
+            echo_date "Check felt-report file:"
+            echo " FILE_FR_TEST=${FILE_FR_TEST}"
+            if [[ -f ${FILE_FR_TEST} ]]; then
+                echo " Felt-report test file found. Creating _fr variant directory."
+                HAS_FR=1
+                DIRFR="${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}_fr"
+                # Remove existing _fr directory to recreate from scratch (handles git pull updates)
+                if [ -d ${DIRFR} ]; then
+                    rm -rf ${DIRFR}
+                fi
+                mkdir -p ${DIRFR}/current
+                cp -v ${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/* ${DIRFR}/current/
+                mv ${DIRFR}/current/${EVENTID}_FELT-REPORT_dat.xml.test ${DIRFR}/current/${EVENTID}_FELT-REPORT_dat.xml
+                echo " _fr variant directory created: ${DIRFR}"
+            else
+                echo " No felt-report test file found. Skipping _fr variant."
+            fi
+            echo_date "Done"
+            echo ""
+        fi
+        # END - Felt-report variant
+
         # Set Mail variables
         MAIL_GITHUB_EVENT_URL="https://github.com/INGV/shakemap-input-eu/blob/main/data/${EVENTID:0:6}/${EVENTID}/current"
         MAIL_GITHUB_CONF_URL="https://github.com/INGV/shakemap-conf-eu/tree/main/config"
@@ -309,6 +341,14 @@ for EVENTID in ${EVENTIDS}; do
         echo ""
         # END - Set ShakeMap conf. by Country code
 
+        # Prepare felt-report info for email
+        MAIL_FR_INFO=""
+        MAIL_SUBJECT_FR=""
+        if (( ${HAS_FR} == 1 )); then
+            MAIL_FR_INFO="FELT-REPORT: Yes (also processing ${EVENTID}_fr variant in parallel)"
+            MAIL_SUBJECT_FR=" [+FR]"
+        fi
+
         # run ShakeMap
         echo -e " \
         Start ShakeMap for: \
@@ -320,6 +360,8 @@ for EVENTID in ${EVENTIDS}; do
         MAG: ${MAG} \
         \n \
         COUNTRY_CODE: ${COUNTRY_CODE} \
+        \n \
+        ${MAIL_FR_INFO} \
         \n\n \
         INPUT PARAMS FROM: \
         \n \
@@ -335,7 +377,7 @@ for EVENTID in ${EVENTIDS}; do
         \n \
         HOST: $( hostname -f ) \
         \n\n \
-        " | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "$(hostname) - Start ShakeMap for ${EVENTID}" ${MAIL_TO} 
+        " | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "$(hostname) - Start ShakeMap for ${EVENTID}${MAIL_SUBJECT_FR}" ${MAIL_TO}
         #cd ${DIRSHAKEMAP4} 
 
         # Set 'select' module only for event M<7. Issue: https://gitlab.rm.ingv.it/shakemap/shakemap4/-/issues/15
@@ -347,23 +389,47 @@ for EVENTID in ${EVENTIDS}; do
         # Run docker
         COMMAND="time docker run --rm --name shakemap4__${EVENTID} -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c\"shake ${EVENTID} ${MODULE_SELECT} assemble -c \\\"SM4 run\\\" model contour shape info stations raster rupture gridxml history plotregr mapping\" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}.txt "
         echo "COMMAND=${COMMAND}"
-        eval ${COMMAND}
-        #exit
-        #time docker run --rm --name shakemap4__${EVENTID} -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c"shake ${EVENTID} ${MODULE_SELECT} assemble -c \"SM4 run\" model contour shape info stations raster rupture gridxml history plotregr mapping" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}.txt 
+        eval ${COMMAND} &
+        PID_MAIN=$!
 
-        #cd -
+        if (( ${HAS_FR} == 1 )); then
+            COMMAND_FR="time docker run --rm --name shakemap4__${EVENTID}_fr -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c\"shake ${EVENTID}_fr ${MODULE_SELECT} assemble -c \\\"SM4 run\\\" model contour shape info stations raster rupture gridxml history plotregr mapping\" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}_fr.txt "
+            echo "COMMAND_FR=${COMMAND_FR}"
+            eval ${COMMAND_FR} &
+            PID_FR=$!
+        fi
+
+        # Wait for all docker runs to complete
+        wait ${PID_MAIN}
+        if (( ${HAS_FR} == 1 )); then
+            wait ${PID_FR}
+        fi
         echo ""
 
         # email for ending shakemap process
         echo_date "Email for ending shakemap process:"
         MAIL_JPGS=
-        for FILE_JPG in $( ls ${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/products/*.jpg ); do
+        for FILE_JPG in $( ls ${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/products/*.jpg 2>/dev/null ); do
             if [ -f ${FILE_JPG} ]; then
                 MAIL_JPGS="${MAIL_JPGS} -a ${FILE_JPG}"
             else
                 echo " the file \"${FILE_JPG}\" doesn't exist."
             fi
         done
+
+        # Collect _fr variant JPGs and log if applicable
+        MAIL_FR_ATTACHMENTS=""
+        if (( ${HAS_FR} == 1 )); then
+            for FILE_JPG_FR in $( ls ${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}_fr/current/products/*.jpg 2>/dev/null ); do
+                if [ -f ${FILE_JPG_FR} ]; then
+                    MAIL_JPGS="${MAIL_JPGS} -a ${FILE_JPG_FR}"
+                else
+                    echo " the file \"${FILE_JPG_FR}\" doesn't exist."
+                fi
+            done
+            MAIL_FR_ATTACHMENTS="-a ${DIRTMP}/shakemap4__${EVENTID}_fr.txt"
+        fi
+
         echo -e " \
             End ShakeMap for: \
             \n\n \
@@ -372,25 +438,30 @@ for EVENTID in ${EVENTIDS}; do
             TIME: ${TIME} \
             \n \
             MAG: ${MAG} \
-	    \n \
+            \n \
             COUNTRY_CODE: ${COUNTRY_CODE} \
+            \n \
+            ${MAIL_FR_INFO} \
             \n\n \
             INPUT PARAMS FROM: \
-	    \n \
+            \n \
             - ${MAIL_GITHUB_EVENT_URL} \
             \n\n \
             INPUT CONF FROM: \
-	    \n \
+            \n \
             ${MAIL_GITHUB_CONF} \
-	    \n\n \
+            \n\n \
             DOCKER IMAGE: ${DOCKER_SHAKEMAP4_IMAGE} \
             \n \
             SCRIPT: ${DIRWORK}/$( basename ${0} ) \
             \n \
             HOST: $( hostname -f ) \
             \n\n \
-        " | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "$(hostname) - End ShakeMap for ${EVENTID}" ${MAIL_TO} -a ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_JPGS}
+        " | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "$(hostname) - End ShakeMap for ${EVENTID}${MAIL_SUBJECT_FR}" ${MAIL_TO} -a ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_FR_ATTACHMENTS} ${MAIL_JPGS}
         rm ${DIRTMP}/shakemap4__${EVENTID}.txt
+        if (( ${HAS_FR} == 1 )); then
+            rm ${DIRTMP}/shakemap4__${EVENTID}_fr.txt
+        fi
         echo_date "Done"
         echo ""
 
