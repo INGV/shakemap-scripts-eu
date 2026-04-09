@@ -31,7 +31,7 @@ function syntax () {
 IN__EVENTID=
 IN__PROFILE=
 IN__REALTIME=0
-IN__FELTREPORT=0
+IN__RI=0
 while getopts :e:p:rlh OPTION
 do
 	case ${OPTION} in
@@ -49,7 +49,7 @@ do
 			IN__REALTIME=1
                 	;;
 		l)
-			IN__FELTREPORT=1
+			IN__RI=1
 			;;
 		\?)
 			echo "Unknown option: -$OPTARG" >&2
@@ -216,23 +216,25 @@ for EVENTID in ${EVENTIDS}; do
         echo ""
 
         # START - Reported-Intensity variant
-        HAS_FR=0
-        if (( ${IN__FELTREPORT} == 1 )); then
-            FILE_FR_TEST="${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/${EVENTID}_REPORTED-INTENSITY_dat.xml.test"
+        HAS_RI=0
+        if (( ${IN__RI} == 1 )); then
+            FILE_RI_TEST="${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/${EVENTID}_REPORTED-INTENSITY_dat.xml.test"
             echo_date "Check reported-intensity file:"
-            echo " FILE_FR_TEST=${FILE_FR_TEST}"
-            if [[ -f ${FILE_FR_TEST} ]]; then
+            echo " FILE_RI_TEST=${FILE_RI_TEST}"
+            if [[ -f ${FILE_RI_TEST} ]]; then
                 echo " Reported-Intensity test file found. Creating _ri variant directory."
-                HAS_FR=1
-                DIRFR="${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}_ri"
+		echo ""
+                HAS_RI=1
+                DIRRI="${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}_ri"
                 # Remove existing _ri directory to recreate from scratch (handles git pull updates)
-                if [ -d ${DIRFR} ]; then
-                    rm -rf ${DIRFR}
+                if [ -d ${DIRRI} ]; then
+                    rm -rf ${DIRRI}
                 fi
-                mkdir -p ${DIRFR}/current
-                cp -v ${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/* ${DIRFR}/current/
-                mv ${DIRFR}/current/${EVENTID}_REPORTED-INTENSITY_dat.xml.test ${DIRFR}/current/${EVENTID}_REPORTED-INTENSITY_dat.xml
-                echo " _ri variant directory created: ${DIRFR}"
+                mkdir -p ${DIRRI}/current
+                cp -v ${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/* ${DIRRI}/current/
+                mv ${DIRRI}/current/${EVENTID}_REPORTED-INTENSITY_dat.xml.test ${DIRRI}/current/${EVENTID}_REPORTED-INTENSITY_dat.xml
+		echo ""
+                echo " _ri variant directory created: ${DIRRI}"
             else
                 echo " No reported-intensity test file found. Skipping _ri variant."
             fi
@@ -342,11 +344,11 @@ for EVENTID in ${EVENTIDS}; do
         # END - Set ShakeMap conf. by Country code
 
         # Prepare reported-intensity info for email
-        MAIL_FR_INFO=""
-        MAIL_SUBJECT_FR=""
-        if (( ${HAS_FR} == 1 )); then
-            MAIL_FR_INFO="REPORTED-INTENSITY: Yes (also processing ${EVENTID}_ri variant in parallel)"
-            MAIL_SUBJECT_FR=" [+FR]"
+        MAIL_RI_INFO=""
+        MAIL_SUBJECT_RI=""
+        if (( ${HAS_RI} == 1 )); then
+            MAIL_RI_INFO="REPORTED-INTENSITY: Yes (also processing ${EVENTID}_ri variant in parallel)"
+            MAIL_SUBJECT_RI=" [+RI]"
         fi
 
         # run ShakeMap
@@ -361,7 +363,7 @@ for EVENTID in ${EVENTIDS}; do
         \n \
         COUNTRY_CODE: ${COUNTRY_CODE} \
         \n \
-        ${MAIL_FR_INFO} \
+        ${MAIL_RI_INFO} \
         \n\n \
         INPUT PARAMS FROM: \
         \n \
@@ -377,7 +379,7 @@ for EVENTID in ${EVENTIDS}; do
         \n \
         HOST: $( hostname -f ) \
         \n\n \
-        " | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "$(hostname) - Start ShakeMap for ${EVENTID}${MAIL_SUBJECT_FR}" ${MAIL_TO}
+        " | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "$(hostname) - Start ShakeMap for ${EVENTID}${MAIL_SUBJECT_RI}" ${MAIL_TO}
         #cd ${DIRSHAKEMAP4} 
 
         # Set 'select' module only for event M<7. Issue: https://gitlab.rm.ingv.it/shakemap/shakemap4/-/issues/15
@@ -395,13 +397,13 @@ for EVENTID in ${EVENTIDS}; do
         ELAPSED=${SECONDS}
         echo_date "END - Docker run for ${EVENTID} (elapsed: $(( ${ELAPSED} / 60 ))m $(( ${ELAPSED} % 60 ))s)"
 
-        if (( ${HAS_FR} == 1 )); then
+        if (( ${HAS_RI} == 1 )); then
             # Run docker for EVENTID_fr
             echo_date "START - Docker run for ${EVENTID}_ri"
             SECONDS=0
-            COMMAND_FR="time docker run --rm --name shakemap4__${EVENTID}_ri -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c\"shake ${EVENTID}_ri ${MODULE_SELECT} assemble -c \\\"SM4 run\\\" model contour shape info stations raster rupture gridxml history plotregr mapping\" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}_ri.txt "
-            echo "COMMAND_FR=${COMMAND_FR}"
-            eval ${COMMAND_FR}
+            COMMAND_RI="time docker run --rm --name shakemap4__${EVENTID}_ri -v ${DIRSHAKEMAP4_PROFILES}:/home/shake/shakemap_profiles -v ${DIRSHAKEMAP4_DATA}:/home/shake/shakemap_data -v ${DIRSHAKEMAP4_LOCAL}:/home/shake/.local ${DOCKER_SHAKEMAP4_IMAGE} -p ${IN__PROFILE} -c\"shake ${EVENTID}_ri ${MODULE_SELECT} assemble -c \\\"SM4 run\\\" model contour shape info stations raster rupture gridxml history plotregr mapping\" 2>&1 | tee -a ${DIRTMP}/shakemap4__${EVENTID}_ri.txt "
+            echo "COMMAND_RI=${COMMAND_RI}"
+            eval ${COMMAND_RI}
             ELAPSED=${SECONDS}
             echo_date "END - Docker run for ${EVENTID}_ri (elapsed: $(( ${ELAPSED} / 60 ))m $(( ${ELAPSED} % 60 ))s)"
         fi
@@ -419,16 +421,16 @@ for EVENTID in ${EVENTIDS}; do
         done
 
         # Collect _ri variant JPGs and log if applicable
-        MAIL_FR_ATTACHMENTS=""
-        if (( ${HAS_FR} == 1 )); then
-            for FILE_JPG_FR in $( ls ${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}_ri/current/products/*.jpg 2>/dev/null ); do
-                if [ -f ${FILE_JPG_FR} ]; then
-                    MAIL_JPGS="${MAIL_JPGS} -a ${FILE_JPG_FR}"
+        MAIL_RI_ATTACHMENTS=""
+        if (( ${HAS_RI} == 1 )); then
+            for FILE_JPG_RI in $( ls ${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}_ri/current/products/*.jpg 2>/dev/null ); do
+                if [ -f ${FILE_JPG_RI} ]; then
+                    MAIL_JPGS="${MAIL_JPGS} -a ${FILE_JPG_RI}"
                 else
-                    echo " the file \"${FILE_JPG_FR}\" doesn't exist."
+                    echo " the file \"${FILE_JPG_RI}\" doesn't exist."
                 fi
             done
-            MAIL_FR_ATTACHMENTS="-a ${DIRTMP}/shakemap4__${EVENTID}_ri.txt"
+            MAIL_RI_ATTACHMENTS="-a ${DIRTMP}/shakemap4__${EVENTID}_ri.txt"
         fi
 
         echo -e " \
@@ -442,7 +444,7 @@ for EVENTID in ${EVENTIDS}; do
             \n \
             COUNTRY_CODE: ${COUNTRY_CODE} \
             \n \
-            ${MAIL_FR_INFO} \
+            ${MAIL_RI_INFO} \
             \n\n \
             INPUT PARAMS FROM: \
             \n \
@@ -458,9 +460,9 @@ for EVENTID in ${EVENTIDS}; do
             \n \
             HOST: $( hostname -f ) \
             \n\n \
-        " | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "$(hostname) - End ShakeMap for ${EVENTID}${MAIL_SUBJECT_FR}" ${MAIL_TO} -a ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_FR_ATTACHMENTS} ${MAIL_JPGS}
+        " | mutt -e 'my_hdr From: ShakeMapEU <shakemap@ingv.it>' -s "$(hostname) - End ShakeMap for ${EVENTID}${MAIL_SUBJECT_RI}" ${MAIL_TO} -a ${DIRTMP}/shakemap4__${EVENTID}.txt ${MAIL_RI_ATTACHMENTS} ${MAIL_JPGS}
         rm ${DIRTMP}/shakemap4__${EVENTID}.txt
-        if (( ${HAS_FR} == 1 )); then
+        if (( ${HAS_RI} == 1 )); then
             rm ${DIRTMP}/shakemap4__${EVENTID}_ri.txt
         fi
         echo_date "Done"
