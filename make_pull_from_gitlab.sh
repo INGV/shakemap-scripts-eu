@@ -124,37 +124,48 @@ echo ""
 echo_date "Check files new/updated:"
 RUN=0
 EVENTID=
-if [[ -f ${DIRTMP}/eventids.txt ]]; then 
+if [[ -f ${DIRTMP}/eventids.txt ]]; then
     rm ${DIRTMP}/eventids.txt
 fi
 if [[ -s ${DIRTMP}/updated_file_form_git.txt ]]; then
 	while read FILE; do
 		EVENTID=$( echo ${FILE} | awk -F"/" '{print $3}' )
 		EVENTID_SUB=$( echo ${FILE} | awk -F"/" '{print $2}' )
-                echo ${EVENTID} >> ${DIRTMP}/eventids.txt
 		echo " FILE=${FILE}"
 		FILE_WITHOUT_EVENTID_SUB=$( echo ${FILE} | sed "s/${EVENTID_SUB}\///" )
 		echo " FILE_WITHOUT_EVENTID_SUB=${FILE_WITHOUT_EVENTID_SUB}"
 		echo " EVENTID=${EVENTID}"
 
-		if [ -f ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB} ]; then
-			if diff -q ${FILE} ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB} &>/dev/null ; then
-				echo "  the file \"${FILE_WITHOUT_EVENTID_SUB}\" already exists and is equal; nothing to do."
+		# File no longer exists in the repo: it was deleted remotely
+		if [ ! -f ${FILE} ]; then
+			echo "  the file \"${FILE}\" was deleted in remote; removing local event directory."
+			DIR_TO_REMOVE="${DIRDATA}/data/${EVENTID}"
+			if [ -d ${DIR_TO_REMOVE} ]; then
+				rm -rf ${DIR_TO_REMOVE}
+				echo "  Removed: ${DIR_TO_REMOVE}"
 			else
-				echo "  the file \"${FILE_WITHOUT_EVENTID_SUB}\" already exists but is different; update."
-				RUN=1
+				echo "  Local event directory \"${DIR_TO_REMOVE}\" doesn't exist; nothing to remove."
 			fi
 		else
-			echo "  the file \"${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB}\" doesn't exist; copy."
-			mkdir -p $(dirname ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB})
-			checkReturnCode ${?}
-			RUN=1
-		fi
+			echo ${EVENTID} >> ${DIRTMP}/eventids.txt
+			if [ -f ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB} ]; then
+				if diff -q ${FILE} ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB} &>/dev/null ; then
+					echo "  the file \"${FILE_WITHOUT_EVENTID_SUB}\" already exists and is equal; nothing to do."
+				else
+					echo "  the file \"${FILE_WITHOUT_EVENTID_SUB}\" already exists but is different; update."
+					RUN=1
+				fi
+			else
+				echo "  the file \"${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB}\" doesn't exist; copy."
+				mkdir -p $(dirname ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB})
+				checkReturnCode ${?}
+				RUN=1
+			fi
 
-		#
-		if (( ${RUN} == 1 )); then
-			cp -v ${FILE} ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB}
-			checkReturnCode ${?}
+			if (( ${RUN} == 1 )); then
+				cp -v ${FILE} ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB}
+				checkReturnCode ${?}
+			fi
 		fi
 		echo ""
 	done < ${DIRTMP}/updated_file_form_git.txt
