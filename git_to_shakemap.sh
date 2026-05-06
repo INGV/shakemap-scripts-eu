@@ -171,7 +171,7 @@ elif (( ${IN__REALTIME} == 0 )); then
     if [ -d ${DIRGITSHAKEMAP_FOR_PULL}/data/${IN__EVENTID:0:6}/${IN__EVENTID}/current ]; then
         cp -v ${DIRGITSHAKEMAP_FOR_PULL}/data/${IN__EVENTID:0:6}/${IN__EVENTID}/current/* ${DIRSHAKEMAP4_PROFILE_DATA}/${IN__EVENTID}/current/
     else
-        echo " the input directory \"${DIRGITSHAKEMAP_FOR_PULL}/data/${IN__EVENTID:0:6}/${IN__EVENTID}/\" doesn't exist"
+        echo " the input directory \"${DIRGITSHAKEMAP_FOR_PULL}/data/${IN__EVENTID:0:6}/${IN__EVENTID}/current\" doesn't exist"
 	exit 0
     fi
     echo "Done"
@@ -223,7 +223,7 @@ for EVENTID in ${EVENTIDS}; do
             echo " FILE_RI_TEST=${FILE_RI_TEST}"
             if [[ -f ${FILE_RI_TEST} ]]; then
                 echo " Reported-Intensity test file found. Creating _ri variant directory."
-		echo ""
+		        echo ""
                 HAS_RI=1
                 DIRRI="${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}_ri"
                 # Remove existing _ri directory to recreate from scratch (handles git pull updates)
@@ -233,7 +233,7 @@ for EVENTID in ${EVENTIDS}; do
                 mkdir -p ${DIRRI}/current
                 cp -v ${DIRSHAKEMAP4_PROFILE_DATA}/${EVENTID}/current/* ${DIRRI}/current/
                 mv ${DIRRI}/current/${EVENTID}_REPORTED-INTENSITY_dat.xml.test ${DIRRI}/current/${EVENTID}_REPORTED-INTENSITY_dat.xml
-		echo ""
+		        echo ""
                 echo " _ri variant directory created: ${DIRRI}"
             else
                 echo " No reported-intensity test file found. Skipping _ri variant."
