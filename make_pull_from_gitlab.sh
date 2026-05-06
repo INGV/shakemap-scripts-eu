@@ -121,69 +121,93 @@ checkReturnCode ${?}
 echo_date "Done"
 echo ""
 
-echo_date "Check files new/updated:"
-RUN=0
+echo_date "Sync event current directories:"
 EVENTID=
 if [[ -f ${DIRTMP}/eventids.txt ]]; then
-    rm ${DIRTMP}/eventids.txt
+    rm "${DIRTMP}/eventids.txt"
+fi
+if [[ -f ${DIRTMP}/eventids_to_sync.txt ]]; then
+    rm "${DIRTMP}/eventids_to_sync.txt"
 fi
 if [[ -s ${DIRTMP}/updated_file_form_git.txt ]]; then
-	while read FILE; do
-		EVENTID=$( echo ${FILE} | awk -F"/" '{print $3}' )
-		EVENTID_SUB=$( echo ${FILE} | awk -F"/" '{print $2}' )
+	while read -r FILE; do
 		echo " FILE=${FILE}"
-		FILE_WITHOUT_EVENTID_SUB=$( echo ${FILE} | sed "s/${EVENTID_SUB}\///" )
-		echo " FILE_WITHOUT_EVENTID_SUB=${FILE_WITHOUT_EVENTID_SUB}"
-		echo " EVENTID=${EVENTID}"
 
-		# File no longer exists in the repo: it was deleted remotely
-		if [ ! -f ${FILE} ]; then
-			echo "  the file \"${FILE}\" was deleted in remote; removing local event directory."
-			DIR_TO_REMOVE="${DIRDATA}/data/${EVENTID}"
-			if [ -d ${DIR_TO_REMOVE} ]; then
-				rm -rf ${DIR_TO_REMOVE}
-				echo "  Removed: ${DIR_TO_REMOVE}"
-			else
-				echo "  Local event directory \"${DIR_TO_REMOVE}\" doesn't exist; nothing to remove."
-			fi
-		else
-			echo ${EVENTID} >> ${DIRTMP}/eventids.txt
-			if [ -f ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB} ]; then
-				if diff -q ${FILE} ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB} &>/dev/null ; then
-					echo "  the file \"${FILE_WITHOUT_EVENTID_SUB}\" already exists and is equal; nothing to do."
-				else
-					echo "  the file \"${FILE_WITHOUT_EVENTID_SUB}\" already exists but is different; update."
-					RUN=1
-				fi
-			else
-				echo "  the file \"${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB}\" doesn't exist; copy."
-				mkdir -p $(dirname ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB})
-				checkReturnCode ${?}
-				RUN=1
-			fi
-
-			if (( ${RUN} == 1 )); then
-				cp -v ${FILE} ${DIRDATA}/${FILE_WITHOUT_EVENTID_SUB}
-				checkReturnCode ${?}
-			fi
+		if [[ ! "${FILE}" =~ ^data/([0-9]{6})/([0-9]{8}_[0-9]{7})/current/.+ ]]; then
+			echo "  the file path doesn't match expected format \"data/<YYYYMM>/<YYYYMMDD_0000000>/current/...\"; skip."
+			echo ""
+			continue
 		fi
+
+		EVENTID_SUB="${BASH_REMATCH[1]}"
+		EVENTID="${BASH_REMATCH[2]}"
+		echo " EVENTID_SUB=${EVENTID_SUB}"
+		echo " EVENTID=${EVENTID}"
+		echo "${EVENTID_SUB}/${EVENTID}" >> "${DIRTMP}/eventids_to_sync.txt"
 		echo ""
-	done < ${DIRTMP}/updated_file_form_git.txt
+	done < "${DIRTMP}/updated_file_form_git.txt"
+
+	if [[ -f ${DIRTMP}/eventids_to_sync.txt ]]; then
+		sort -u "${DIRTMP}/eventids_to_sync.txt" > "${DIRTMP}/eventids_to_sync.txt.new"
+		checkReturnCode ${?}
+		mv "${DIRTMP}/eventids_to_sync.txt.new" "${DIRTMP}/eventids_to_sync.txt"
+		checkReturnCode ${?}
+
+		while IFS="/" read -r EVENTID_SUB EVENTID; do
+			SRC_CURRENT="data/${EVENTID_SUB}/${EVENTID}/current"
+			DST_EVENT="${DIRDATA}/data/${EVENTID}"
+			DST_CURRENT="${DST_EVENT}/current"
+
+			echo " EVENTID=${EVENTID}"
+			echo " SRC_CURRENT=${SRC_CURRENT}"
+			echo " DST_EVENT=${DST_EVENT}"
+			echo " DST_CURRENT=${DST_CURRENT}"
+
+			if [[ -d "${SRC_CURRENT}" ]]; then
+				echo "  the source current directory exists in Git; sync local current directory."
+				if [[ -d "${DST_CURRENT}" ]]; then
+					rm -rf "${DST_CURRENT}"
+					checkReturnCode ${?}
+					echo "  Removed: ${DST_CURRENT}"
+				fi
+				mkdir -p "${DST_CURRENT}"
+				checkReturnCode ${?}
+				cp -av "${SRC_CURRENT}/." "${DST_CURRENT}/"
+				checkReturnCode ${?}
+				echo "${EVENTID}" >> "${DIRTMP}/eventids.txt"
+			else
+				echo "  the source current directory doesn't exist in Git; remove local event directory."
+				if [[ -d "${DST_EVENT}" ]]; then
+					rm -rf "${DST_EVENT}"
+					checkReturnCode ${?}
+					echo "  Removed: ${DST_EVENT}"
+				else
+					echo "  Local event directory \"${DST_EVENT}\" doesn't exist; nothing to remove."
+				fi
+			fi
+			echo ""
+		done < "${DIRTMP}/eventids_to_sync.txt"
+	fi
 fi
-rm ${DIRTMP}/updated_file_form_git.txt
+if [[ -f ${DIRTMP}/eventids_to_sync.txt ]]; then
+    rm "${DIRTMP}/eventids_to_sync.txt"
+fi
+rm "${DIRTMP}/updated_file_form_git.txt"
 echo_date "Done"
 echo ""
 
 echo_date "Print eventid(s) changed:"
 EVENTIDS=
 if [[ -f ${DIRTMP}/eventids.txt ]]; then
-    sort -u ${DIRTMP}/eventids.txt > ${DIRTMP}/eventids.txt.new
-    mv ${DIRTMP}/eventids.txt.new ${DIRTMP}/eventids.txt
-    EVENTIDS=$( tr -s '\n'  ' ' < ${DIRTMP}/eventids.txt )
+    sort -u "${DIRTMP}/eventids.txt" > "${DIRTMP}/eventids.txt.new"
+    checkReturnCode ${?}
+    mv "${DIRTMP}/eventids.txt.new" "${DIRTMP}/eventids.txt"
+    checkReturnCode ${?}
+    EVENTIDS=$( tr -s '\n'  ' ' < "${DIRTMP}/eventids.txt" )
 fi
 echo "EVENTIDS=${EVENTIDS}"
 if [[ -f ${DIRTMP}/eventids.txt ]]; then
-    rm ${DIRTMP}/eventids.txt
+    rm "${DIRTMP}/eventids.txt"
 fi
 echo_date "Done"
 
